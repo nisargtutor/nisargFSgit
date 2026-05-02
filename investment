@@ -1,0 +1,1662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Investment Appraisal Simulation — IB DP Business Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #6c3ce2;
+  --primary-light: #9b6ff5;
+  --accent: #ff6b35;
+  --accent2: #00c9a7;
+  --accent3: #ffd166;
+  --bg: #f0eeff;
+  --card: #ffffff;
+  --text: #1a1240;
+  --text-muted: #6b7280;
+  --green: #16a34a;
+  --amber: #d97706;
+  --red: #dc2626;
+  --bar-green: #22c55e;
+  --bar-amber: #f59e0b;
+  --bar-red: #ef4444;
+  --radius: 20px;
+  --shadow: 0 8px 32px rgba(108,60,226,0.12);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ─── SPLASH ─── */
+#splash {
+  position: fixed; inset: 0; z-index: 9999;
+  background: linear-gradient(135deg, #1a0533 0%, #3d1080 40%, #6c3ce2 80%, #ff6b35 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 18px; transition: opacity 0.6s;
+}
+#splash h1 {
+  font-family: 'Fredoka One', cursive;
+  font-size: clamp(2rem, 5vw, 3.6rem);
+  color: #fff;
+  text-align: center;
+  line-height: 1.15;
+  text-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  max-width: 700px;
+}
+#splash .sub {
+  font-size: 1.05rem;
+  color: rgba(255,255,255,0.82);
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-align: center;
+}
+#splash .badge-row {
+  display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 6px;
+}
+#splash .badge {
+  background: rgba(255,255,255,0.15);
+  border: 1.5px solid rgba(255,255,255,0.35);
+  color: #fff;
+  border-radius: 50px;
+  padding: 5px 16px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+#startBtn {
+  margin-top: 14px;
+  padding: 16px 52px;
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.45rem;
+  background: linear-gradient(135deg, #ff6b35, #ffd166);
+  color: #1a0533;
+  border: none; border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 8px 32px rgba(255,107,53,0.45);
+  animation: pulse-btn 2s infinite;
+  transition: transform 0.15s;
+}
+#startBtn:hover { transform: scale(1.06); }
+@keyframes pulse-btn {
+  0%,100% { box-shadow: 0 8px 32px rgba(255,107,53,0.45); }
+  50% { box-shadow: 0 8px 48px rgba(255,107,53,0.75); }
+}
+.splash-stars {
+  position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+}
+.star {
+  position: absolute; border-radius: 50%;
+  background: rgba(255,255,255,0.7);
+  animation: twinkle var(--d,3s) ease-in-out infinite;
+}
+@keyframes twinkle {
+  0%,100%{opacity:.2;transform:scale(1)}
+  50%{opacity:1;transform:scale(1.4)}
+}
+
+/* ─── MAIN LAYOUT ─── */
+#app { display: none; flex-direction: column; min-height: 100vh; }
+
+/* ─── TOPBAR ─── */
+#topbar {
+  background: linear-gradient(90deg, #1a0533 0%, #3d1080 100%);
+  padding: 10px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.25);
+}
+#topbar h2 {
+  font-family: 'Fredoka One', cursive;
+  color: #fff; font-size: 1.3rem;
+}
+#resetBtn {
+  background: #ff6b35; color: #fff;
+  border: none; border-radius: 50px;
+  padding: 7px 20px; font-family: 'Nunito', sans-serif;
+  font-weight: 800; font-size: 0.9rem;
+  cursor: pointer; transition: background 0.2s, transform 0.15s;
+}
+#resetBtn:hover { background: #e55a22; transform: scale(1.05); }
+
+/* ─── PHASE TIMELINE ─── */
+#timeline {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0; padding: 18px 24px 10px;
+}
+.phase-node {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  position: relative;
+}
+.phase-circle {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: #e0d8ff;
+  border: 3px solid #c4b5fd;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.1rem; color: #7c3aed;
+  transition: all 0.4s;
+}
+.phase-circle.active {
+  background: var(--primary); color: #fff;
+  border-color: var(--primary-light);
+  box-shadow: 0 0 0 6px rgba(108,60,226,0.2);
+  animation: phase-pulse 1.5s infinite;
+}
+.phase-circle.done {
+  background: var(--accent2); color: #fff;
+  border-color: #00a98f;
+}
+@keyframes phase-pulse {
+  0%,100%{box-shadow:0 0 0 6px rgba(108,60,226,0.2)}
+  50%{box-shadow:0 0 0 12px rgba(108,60,226,0.08)}
+}
+.phase-label {
+  font-size: 0.72rem; font-weight: 700;
+  color: var(--text-muted);
+  text-align: center;
+  max-width: 80px;
+}
+.phase-label.active { color: var(--primary); }
+.phase-connector {
+  width: 60px; height: 3px;
+  background: #c4b5fd;
+  margin: 0; align-self: center; margin-bottom: 22px;
+  transition: background 0.4s;
+}
+.phase-connector.done { background: var(--accent2); }
+
+/* ─── MAIN GRID ─── */
+#maingrid {
+  display: grid;
+  grid-template-columns: 340px 1fr 260px;
+  gap: 16px;
+  padding: 0 16px 16px;
+  flex: 1;
+}
+@media(max-width:900px){
+  #maingrid { grid-template-columns: 1fr; }
+}
+
+/* ─── CARDS ─── */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+  border: 1.5px solid rgba(108,60,226,0.08);
+}
+.card-title {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.05rem; color: var(--primary);
+  margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* ─── SLIDERS ─── */
+.slider-row { margin-bottom: 14px; }
+.slider-label {
+  font-size: 0.82rem; font-weight: 700; color: var(--text);
+  margin-bottom: 4px; display: flex; justify-content: space-between;
+}
+.slider-val {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.78rem; color: var(--primary);
+  background: #ede9fe; padding: 2px 8px; border-radius: 20px;
+}
+input[type=range] {
+  width: 100%; accent-color: var(--primary);
+  height: 6px; border-radius: 20px; cursor: pointer;
+}
+
+/* ─── SVG SCENE ─── */
+#sceneContainer {
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: linear-gradient(180deg, #c3e6ff 0%, #e8f4fd 60%, #a8e6cf 100%);
+  min-height: 280px;
+  position: relative;
+  box-shadow: var(--shadow);
+  border: 1.5px solid rgba(108,60,226,0.08);
+}
+#mainSvg { width: 100%; height: 100%; min-height: 280px; display: block; }
+
+/* ─── METRICS BARS ─── */
+.metric-bar-row { margin-bottom: 10px; }
+.metric-bar-label {
+  font-size: 0.78rem; font-weight: 700;
+  display: flex; justify-content: space-between; margin-bottom: 3px;
+}
+.metric-bar-track {
+  height: 14px; background: #ede9fe;
+  border-radius: 20px; overflow: hidden;
+}
+.metric-bar-fill {
+  height: 100%; border-radius: 20px;
+  transition: width 0.7s cubic-bezier(.4,0,.2,1), background 0.7s;
+}
+.warn-blink { animation: blink-warn 0.6s infinite; }
+@keyframes blink-warn {
+  0%,100%{opacity:1} 50%{opacity:0.3}
+}
+
+/* ─── PREDICTION WIDGET ─── */
+.pred-options {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;
+}
+.pred-btn {
+  padding: 10px 6px; border-radius: 14px;
+  border: 2.5px solid #e0d8ff;
+  background: #f5f3ff; cursor: pointer;
+  font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.85rem;
+  color: var(--text); transition: all 0.2s;
+  text-align: center;
+}
+.pred-btn:hover { border-color: var(--primary); background: #ede9fe; }
+.pred-btn.selected {
+  border-color: var(--primary);
+  background: var(--primary); color: #fff;
+  box-shadow: 0 4px 16px rgba(108,60,226,0.3);
+}
+
+#advanceBtn {
+  width: 100%; padding: 13px;
+  font-family: 'Fredoka One', cursive; font-size: 1.15rem;
+  border: none; border-radius: 14px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: #fff; cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 16px rgba(108,60,226,0.3);
+}
+#advanceBtn:disabled {
+  background: #d1d5db; color: #9ca3af;
+  box-shadow: none; cursor: not-allowed;
+}
+#advanceBtn:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(108,60,226,0.4);
+}
+
+/* ─── CHART ─── */
+#chartCanvas { width: 100%; border-radius: 12px; }
+
+/* ─── ADVISOR CHIPS ─── */
+.advisor-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.advisor-chip {
+  display: flex; align-items: center; gap: 6px;
+  background: #f5f3ff; border: 2px solid #e0d8ff;
+  border-radius: 50px; padding: 6px 14px;
+  font-size: 0.78rem; font-weight: 700;
+  cursor: pointer; transition: all 0.2s;
+  position: relative;
+}
+.advisor-chip:hover { border-color: var(--primary); background: #ede9fe; }
+.advisor-chip .tooltip {
+  display: none; position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%);
+  background: #1a0533; color: #fff; padding: 8px 12px; border-radius: 10px;
+  font-size: 0.75rem; font-weight: 600; white-space: nowrap; z-index: 50;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  max-width: 220px; white-space: normal; text-align: center;
+}
+.advisor-chip:hover .tooltip { display: block; }
+
+/* ─── ATL TRACKER ─── */
+#atlTracker {
+  background: linear-gradient(135deg, #1a0533, #3d1080);
+  border-radius: var(--radius); padding: 14px;
+  color: #fff;
+}
+#atlTracker .atl-title {
+  font-family: 'Fredoka One', cursive; font-size: 0.95rem;
+  color: var(--accent3); margin-bottom: 8px;
+}
+.atl-item { font-size: 0.75rem; margin-bottom: 5px; display: flex; align-items: center; gap: 6px; }
+.atl-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  background: #555;
+  transition: background 0.4s;
+}
+.atl-dot.active { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
+
+/* ─── MODAL ─── */
+#modalOverlay {
+  display: none; position: fixed; inset: 0; z-index: 500;
+  background: rgba(26,2,51,0.7); backdrop-filter: blur(4px);
+  align-items: center; justify-content: center;
+  padding: 16px;
+}
+#modalOverlay.show { display: flex; }
+#modal {
+  background: #fff; border-radius: 24px;
+  max-width: 680px; width: 100%;
+  box-shadow: 0 24px 80px rgba(108,60,226,0.3);
+  overflow: hidden; animation: modal-in 0.35s cubic-bezier(.4,0,.2,1);
+  max-height: 90vh; overflow-y: auto;
+}
+@keyframes modal-in {
+  from{opacity:0;transform:scale(0.9) translateY(20px)}
+  to{opacity:1;transform:scale(1) translateY(0)}
+}
+.modal-header {
+  background: linear-gradient(135deg, var(--primary), #9b6ff5);
+  padding: 20px 24px 16px; color: #fff;
+}
+.modal-header h3 {
+  font-family: 'Fredoka One', cursive; font-size: 1.5rem;
+}
+.modal-body { padding: 20px 24px; }
+
+/* ─── OUTCOME GRID ─── */
+.outcome-grid {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 16px;
+}
+.outcome-cell {
+  background: #f5f3ff; border-radius: 14px;
+  padding: 12px 10px; text-align: center;
+  border: 2px solid #e0d8ff;
+}
+.outcome-cell .oc-label { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); }
+.outcome-cell .oc-val {
+  font-family: 'Space Mono', monospace;
+  font-size: 1.05rem; font-weight: 700; color: var(--primary);
+  margin: 4px 0;
+}
+.outcome-cell .oc-arrow { font-size: 1.2rem; }
+.arrow-up { color: var(--green); }
+.arrow-down { color: var(--red); }
+
+/* ─── CAUSE CHAIN ─── */
+.cause-chain {
+  display: flex; align-items: center; gap: 6px;
+  flex-wrap: wrap; margin-bottom: 14px;
+  padding: 12px; background: #f0fdf4; border-radius: 14px;
+  border: 1.5px solid #86efac;
+}
+.cause-node {
+  background: #fff; border: 2px solid #bbf7d0;
+  border-radius: 10px; padding: 6px 12px;
+  font-size: 0.78rem; font-weight: 700; color: #166534;
+}
+.cause-arrow { font-size: 1.1rem; color: #16a34a; }
+
+/* ─── THREE FUTURES ─── */
+.futures-section { margin-bottom: 16px; }
+.futures-section h4 {
+  font-family: 'Fredoka One', cursive; color: var(--primary);
+  font-size: 1rem; margin-bottom: 10px;
+}
+.futures-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.future-card {
+  border-radius: 14px; padding: 12px; font-size: 0.77rem;
+  border: 2px solid; font-weight: 600;
+}
+.future-A { background: #f0fdf4; border-color: #86efac; color: #166534; }
+.future-B { background: #fffbeb; border-color: #fcd34d; color: #92400e; }
+.future-C { background: #fef2f2; border-color: #fca5a5; color: #991b1b; }
+.future-card .future-label {
+  font-family: 'Fredoka One', cursive; font-size: 0.9rem; margin-bottom: 4px;
+}
+
+.rank-section { margin-bottom: 14px; }
+.rank-section label {
+  font-size: 0.78rem; font-weight: 700; color: var(--text-muted);
+  display: block; margin-bottom: 6px;
+}
+.rank-options { display: flex; gap: 6px; flex-wrap: wrap; }
+.rank-btn {
+  padding: 6px 14px; border-radius: 50px;
+  border: 2px solid #e0d8ff;
+  background: #f5f3ff;
+  font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.8rem;
+  cursor: pointer; transition: all 0.2s;
+}
+.rank-btn.selected { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.justify-input {
+  width: 100%; border: 2px solid #e0d8ff;
+  border-radius: 12px; padding: 9px 12px;
+  font-family: 'Nunito', sans-serif; font-size: 0.85rem;
+  resize: vertical; min-height: 54px; outline: none;
+  transition: border-color 0.2s;
+}
+.justify-input:focus { border-color: var(--primary); }
+
+/* ─── REAL WORLD ECHO ─── */
+.rw-echo {
+  background: linear-gradient(135deg, #1a0533, #3d1080);
+  border-radius: 14px; padding: 14px; margin-bottom: 14px;
+  color: #fff;
+}
+.rw-echo .rw-title {
+  font-family: 'Fredoka One', cursive; color: var(--accent3);
+  font-size: 0.9rem; margin-bottom: 6px;
+}
+.rw-echo p { font-size: 0.8rem; line-height: 1.5; color: rgba(255,255,255,0.9); }
+
+/* ─── LP CHIPS ─── */
+.lp-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.lp-chip {
+  padding: 7px 16px; border-radius: 50px;
+  border: 2px solid #e0d8ff;
+  font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.8rem;
+  cursor: pointer; background: #f5f3ff; transition: all 0.2s;
+}
+.lp-chip.selected { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* ─── EVENT CARD ─── */
+.event-card {
+  background: linear-gradient(135deg, #ff6b35, #ffd166);
+  border-radius: 14px; padding: 14px; margin-bottom: 14px; color: #1a0533;
+}
+.event-card .ev-title {
+  font-family: 'Fredoka One', cursive; font-size: 1rem; margin-bottom: 4px;
+}
+.event-card p { font-size: 0.82rem; font-weight: 600; }
+
+/* ─── CONFIRM REVEAL BTN ─── */
+.reveal-btn {
+  background: linear-gradient(135deg, var(--accent), var(--accent3));
+  color: #1a0533; border: none; border-radius: 14px;
+  padding: 12px 28px; font-family: 'Fredoka One', cursive;
+  font-size: 1.05rem; cursor: pointer; margin-right: 8px;
+  transition: transform 0.15s;
+}
+.reveal-btn:hover { transform: scale(1.04); }
+.close-modal-btn {
+  background: #e0d8ff; color: var(--primary); border: none;
+  border-radius: 14px; padding: 12px 24px;
+  font-family: 'Fredoka One', cursive; font-size: 1rem;
+  cursor: pointer; transition: background 0.2s;
+}
+.close-modal-btn:hover { background: #c4b5fd; }
+
+/* ─── REFLECTION PANEL ─── */
+#reflectionPanel {
+  display: none;
+  background: linear-gradient(135deg, #1a0533 0%, #3d1080 100%);
+  border-radius: var(--radius); padding: 24px; margin: 0 16px 16px; color: #fff;
+}
+#reflectionPanel h3 {
+  font-family: 'Fredoka One', cursive; font-size: 1.4rem;
+  color: var(--accent3); margin-bottom: 16px; text-align: center;
+}
+.reflect-q {
+  background: rgba(255,255,255,0.08);
+  border-radius: 14px; padding: 14px; margin-bottom: 10px;
+  border-left: 4px solid var(--accent);
+}
+.reflect-q .q-num {
+  font-family: 'Fredoka One', cursive; color: var(--accent);
+  font-size: 0.85rem; margin-bottom: 4px;
+}
+.reflect-q p { font-size: 0.85rem; line-height: 1.55; color: rgba(255,255,255,0.9); }
+
+/* ─── TOAST ─── */
+#toastContainer {
+  position: fixed; bottom: 24px; right: 24px;
+  z-index: 9000; display: flex; flex-direction: column; gap: 8px;
+}
+.toast {
+  background: #1a0533; color: #fff;
+  padding: 12px 20px; border-radius: 14px;
+  font-size: 0.85rem; font-weight: 700;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  animation: toast-in 0.3s ease-out, toast-out 0.3s ease-in 3.5s forwards;
+  border-left: 4px solid var(--accent2);
+}
+@keyframes toast-in { from{opacity:0;transform:translateX(40px)} to{opacity:1;transform:translateX(0)} }
+@keyframes toast-out { to{opacity:0;transform:translateX(40px)} }
+
+/* ─── ROUND BADGE ─── */
+.round-badge {
+  background: var(--accent); color: #fff;
+  padding: 3px 12px; border-radius: 50px;
+  font-size: 0.72rem; font-weight: 800;
+  display: inline-block; margin-left: 6px;
+}
+
+/* ─── RESULTS HISTORY ─── */
+.history-row {
+  display: flex; gap: 6px; align-items: center;
+  font-size: 0.75rem; padding: 6px 8px;
+  background: #f5f3ff; border-radius: 10px; margin-bottom: 5px;
+}
+.history-row .h-round {
+  background: var(--primary); color: #fff;
+  border-radius: 50%; width: 22px; height: 22px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Fredoka One', cursive; font-size: 0.8rem; flex-shrink: 0;
+}
+
+/* ─── SVG ANIMATIONS ─── */
+.svg-cloud { animation: float-cloud 8s ease-in-out infinite; }
+.svg-cloud2 { animation: float-cloud 11s ease-in-out infinite reverse; }
+@keyframes float-cloud {
+  0%,100%{transform:translateX(0)} 50%{transform:translateX(18px)}
+}
+.svg-coin { animation: spin-coin 2s linear infinite; }
+@keyframes spin-coin {
+  0%{transform:rotateY(0deg)} 100%{transform:rotateY(360deg)}
+}
+.factory-smoke { animation: smoke-rise 2s ease-in-out infinite; }
+@keyframes smoke-rise {
+  0%{opacity:0.8;transform:translateY(0) scale(0.8)}
+  100%{opacity:0;transform:translateY(-30px) scale(1.5)}
+}
+</style>
+</head>
+<body>
+
+<!-- ─── SPLASH ─── -->
+<div id="splash">
+  <div class="splash-stars" id="starsContainer"></div>
+  <h1>💰 Investment Appraisal<br>Simulation</h1>
+  <div class="sub">Payback Period · NPV · ARR</div>
+  <div class="badge-row">
+    <span class="badge">📚 IB DP Business Management</span>
+    <span class="badge">🎓 Year 11</span>
+    <span class="badge">🔑 Key Concept: Decision-Making</span>
+    <span class="badge">🧠 ATL: Thinking & Research</span>
+  </div>
+  <button id="startBtn">🚀 Start Simulation</button>
+</div>
+
+<!-- ─── TOAST CONTAINER ─── -->
+<div id="toastContainer"></div>
+
+<!-- ─── MODAL ─── -->
+<div id="modalOverlay">
+  <div id="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">Round Results</h3>
+      <div style="font-size:0.85rem;opacity:0.85;margin-top:4px;" id="modalRoundLabel"></div>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- ─── APP ─── -->
+<div id="app">
+
+  <!-- TOPBAR -->
+  <div id="topbar">
+    <h2>💹 Investment Appraisal — IB DP BM</h2>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <span id="topRound" style="color:#ffd166;font-weight:800;font-size:0.9rem;">Round 1 of 3</span>
+      <button id="resetBtn">🔄 Reset</button>
+    </div>
+  </div>
+
+  <!-- PHASE TIMELINE -->
+  <div id="timeline">
+    <div class="phase-node">
+      <div class="phase-circle active" id="pc1">1</div>
+      <div class="phase-label active" id="pl1">Small-Scale<br>Investment</div>
+    </div>
+    <div class="phase-connector" id="conn1"></div>
+    <div class="phase-node">
+      <div class="phase-circle" id="pc2">2</div>
+      <div class="phase-label" id="pl2">Mid-Scale<br>Investment</div>
+    </div>
+    <div class="phase-connector" id="conn2"></div>
+    <div class="phase-node">
+      <div class="phase-circle" id="pc3">3</div>
+      <div class="phase-label" id="pl3">Major Capital<br>Decision</div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div id="maingrid">
+
+    <!-- LEFT: SLIDERS + PREDICTION -->
+    <div>
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-title">🎛️ Set Your Variables</div>
+        <div id="guidingQ" style="background:#ede9fe;border-radius:12px;padding:10px 12px;font-size:0.8rem;font-weight:700;color:var(--primary);margin-bottom:14px;line-height:1.5;"></div>
+
+        <div class="slider-row">
+          <div class="slider-label">
+            <span>💼 Initial Investment Outlay</span>
+            <span class="slider-val" id="v0label">£100K</span>
+          </div>
+          <input type="range" min="0" max="4" step="1" value="2" id="s0">
+          <div style="display:flex;justify-content:space-between;font-size:0.68rem;color:#9ca3af;margin-top:2px;">
+            <span>£100K</span><span>£500K</span><span>£1M</span><span>£3M</span><span>£10M</span>
+          </div>
+        </div>
+
+        <div class="slider-row">
+          <div class="slider-label">
+            <span>💸 Annual Net Cash Flows</span>
+            <span class="slider-val" id="v1label">Low</span>
+          </div>
+          <input type="range" min="0" max="4" step="1" value="2" id="s1">
+          <div style="display:flex;justify-content:space-between;font-size:0.68rem;color:#9ca3af;margin-top:2px;">
+            <span>Very Low</span><span>Low</span><span>Moderate</span><span>High</span><span>Very High</span>
+          </div>
+        </div>
+
+        <div class="slider-row">
+          <div class="slider-label">
+            <span>📉 Discount Rate %</span>
+            <span class="slider-val" id="v2label">3%</span>
+          </div>
+          <input type="range" min="0" max="4" step="1" value="1" id="s2">
+          <div style="display:flex;justify-content:space-between;font-size:0.68rem;color:#9ca3af;margin-top:2px;">
+            <span>3%</span><span>5%</span><span>8%</span><span>12%</span><span>15%</span>
+          </div>
+        </div>
+
+        <div class="slider-row">
+          <div class="slider-label">
+            <span>📅 Project Life (Years)</span>
+            <span class="slider-val" id="v3label">3 yrs</span>
+          </div>
+          <input type="range" min="0" max="4" step="1" value="2" id="s3">
+          <div style="display:flex;justify-content:space-between;font-size:0.68rem;color:#9ca3af;margin-top:2px;">
+            <span>3yr</span><span>5yr</span><span>8yr</span><span>10yr</span><span>15yr</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PREDICTION -->
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-title">🔮 Your Prediction</div>
+        <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:10px;font-weight:600;">
+          Lock in your prediction before advancing ↓
+        </div>
+        <div class="pred-options" id="predOptions">
+          <button class="pred-btn" data-pred="thriving" onclick="selectPred(this)">🌱 Thriving<br><span style="font-size:0.7rem;font-weight:600;opacity:0.7;">NPV positive, accept</span></button>
+          <button class="pred-btn" data-pred="stable" onclick="selectPred(this)">⚖️ Stable<br><span style="font-size:0.7rem;font-weight:600;opacity:0.7;">Borderline decision</span></button>
+          <button class="pred-btn" data-pred="stressed" onclick="selectPred(this)">⚠️ Stressed<br><span style="font-size:0.7rem;font-weight:600;opacity:0.7;">Long payback, risky</span></button>
+          <button class="pred-btn" data-pred="crisis" onclick="selectPred(this)">🔴 Crisis<br><span style="font-size:0.7rem;font-weight:600;opacity:0.7;">NPV negative, reject</span></button>
+        </div>
+        <button id="advanceBtn" disabled onclick="handleAdvance()">⏭️ Advance to Round</button>
+      </div>
+
+      <!-- ADVISORS -->
+      <div class="card">
+        <div class="card-title">🧑‍💼 Advisor Panel</div>
+        <div class="advisor-row">
+          <div class="advisor-chip">🏦 CFO
+            <span class="tooltip">Higher discount rates reduce NPV significantly. Check your sensitivity!</span>
+          </div>
+          <div class="advisor-chip">📊 Analyst
+            <span class="tooltip">ARR ignores time value of money. Compare it with NPV for full picture.</span>
+          </div>
+          <div class="advisor-chip">⚠️ Risk Mgr
+            <span class="tooltip">Short payback periods reduce risk — money returned sooner is safer!</span>
+          </div>
+          <div class="advisor-chip">🌍 Ethicist
+            <span class="tooltip">Does high NPV always mean the right decision? Consider social impact.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTRE: SVG + METRICS + CHART -->
+    <div>
+      <!-- SVG SCENE -->
+      <div id="sceneContainer" style="margin-bottom:14px;">
+        <svg id="mainSvg" viewBox="0 0 700 300" xmlns="http://www.w3.org/2000/svg">
+          <!-- SKY -->
+          <defs>
+            <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#87ceeb" id="skyTop"/>
+              <stop offset="100%" stop-color="#e0f4ff" id="skyBot"/>
+            </linearGradient>
+            <linearGradient id="groundGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#4ade80" id="groundTop"/>
+              <stop offset="100%" stop-color="#166534" id="groundBot"/>
+            </linearGradient>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+              <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+
+          <!-- Background -->
+          <rect width="700" height="300" fill="url(#skyGrad)"/>
+          
+          <!-- Sun -->
+          <circle id="sceneSun" cx="600" cy="60" r="35" fill="#ffd166" filter="url(#glow)" opacity="0.9"/>
+          <g id="sunRays">
+            <line x1="600" y1="15" x2="600" y2="5" stroke="#ffd166" stroke-width="3" stroke-linecap="round"/>
+            <line x1="638" y1="22" x2="645" y2="15" stroke="#ffd166" stroke-width="3" stroke-linecap="round"/>
+            <line x1="655" y1="60" x2="665" y2="60" stroke="#ffd166" stroke-width="3" stroke-linecap="round"/>
+            <line x1="638" y1="98" x2="645" y2="105" stroke="#ffd166" stroke-width="3" stroke-linecap="round"/>
+            <line x1="562" y1="22" x2="555" y2="15" stroke="#ffd166" stroke-width="3" stroke-linecap="round"/>
+            <line x1="545" y1="60" x2="535" y2="60" stroke="#ffd166" stroke-width="3" stroke-linecap="round"/>
+            <line x1="562" y1="98" x2="555" y2="105" stroke="#ffd166" stroke-width="3" stroke-linecap="round"/>
+          </g>
+
+          <!-- Clouds -->
+          <g class="svg-cloud" opacity="0.85">
+            <ellipse cx="120" cy="55" rx="45" ry="22" fill="white"/>
+            <ellipse cx="95" cy="62" rx="30" ry="18" fill="white"/>
+            <ellipse cx="150" cy="62" rx="30" ry="16" fill="white"/>
+          </g>
+          <g class="svg-cloud2" opacity="0.7">
+            <ellipse cx="350" cy="45" rx="38" ry="18" fill="white"/>
+            <ellipse cx="328" cy="52" rx="24" ry="14" fill="white"/>
+            <ellipse cx="372" cy="52" rx="24" ry="13" fill="white"/>
+          </g>
+
+          <!-- Ground -->
+          <rect id="groundRect" x="0" y="230" width="700" height="70" fill="url(#groundGrad)"/>
+
+          <!-- FACTORY/BUILDING GROUP — scales with investment -->
+          <g id="buildingGroup" transform="translate(0,0)">
+            <!-- Main factory -->
+            <rect id="factoryBody" x="280" y="145" width="140" height="85" rx="6" fill="#4f46e5"/>
+            <rect id="factoryRoof" x="270" y="135" width="160" height="18" rx="5" fill="#3730a3"/>
+            <!-- Windows -->
+            <rect x="295" y="160" width="25" height="20" rx="3" fill="#a5f3fc" id="win1"/>
+            <rect x="335" y="160" width="25" height="20" rx="3" fill="#a5f3fc" id="win2"/>
+            <rect x="375" y="160" width="25" height="20" rx="3" fill="#a5f3fc" id="win3"/>
+            <rect x="295" y="190" width="25" height="20" rx="3" fill="#a5f3fc" id="win4"/>
+            <rect x="335" y="190" width="25" height="20" rx="3" fill="#a5f3fc" id="win5"/>
+            <!-- Door -->
+            <rect x="333" y="195" width="34" height="35" rx="3" fill="#1e1b4b"/>
+            <!-- Chimneys -->
+            <rect id="chim1" x="305" y="105" width="16" height="40" rx="4" fill="#374151"/>
+            <rect id="chim2" x="379" y="110" width="14" height="35" rx="4" fill="#374151"/>
+            <!-- Smoke -->
+            <circle class="factory-smoke" cx="313" cy="100" r="8" fill="#9ca3af" opacity="0.6"/>
+            <circle class="factory-smoke" cx="387" cy="105" r="6" fill="#9ca3af" opacity="0.5" style="animation-delay:0.7s"/>
+            <!-- Sign -->
+            <rect id="factorySign" x="305" y="148" width="90" height="14" rx="4" fill="#ffd166"/>
+            <text x="350" y="159" font-family="Fredoka One, cursive" font-size="9" fill="#1a0533" text-anchor="middle">INVEST CO.</text>
+          </g>
+
+          <!-- TREES GROUP -->
+          <g id="treesGroup">
+            <!-- Tree 1 -->
+            <rect id="t1trunk" x="75" y="200" width="12" height="32" rx="3" fill="#92400e"/>
+            <circle id="t1top" cx="81" cy="190" r="28" fill="#16a34a"/>
+            <circle cx="68" cy="198" r="18" fill="#15803d"/>
+            <circle cx="96" cy="195" r="20" fill="#14532d"/>
+            <!-- Tree 2 -->
+            <rect id="t2trunk" x="170" y="205" width="10" height="27" rx="3" fill="#92400e"/>
+            <circle id="t2top" cx="175" cy="196" r="22" fill="#22c55e"/>
+            <circle cx="162" cy="203" r="15" fill="#16a34a"/>
+            <circle cx="189" cy="200" r="16" fill="#15803d"/>
+            <!-- Tree 3 -->
+            <rect id="t3trunk" x="480" y="202" width="11" height="30" rx="3" fill="#92400e"/>
+            <circle id="t3top" cx="486" cy="193" r="24" fill="#16a34a"/>
+            <circle cx="473" cy="200" r="16" fill="#15803d"/>
+            <circle cx="500" cy="198" r="17" fill="#14532d"/>
+            <!-- Tree 4 -->
+            <rect id="t4trunk" x="555" y="207" width="10" height="25" rx="3" fill="#92400e"/>
+            <circle id="t4top" cx="560" cy="198" r="20" fill="#22c55e"/>
+            <circle cx="548" cy="205" r="13" fill="#16a34a"/>
+          </g>
+
+          <!-- COIN / MONEY FLOW PARTICLES -->
+          <g id="coinGroup" opacity="0">
+            <circle cx="350" cy="140" r="12" fill="#ffd166" stroke="#d97706" stroke-width="2"/>
+            <text x="350" y="145" font-size="11" text-anchor="middle" fill="#92400e" font-family="Fredoka One, cursive">£</text>
+            <circle cx="400" cy="120" r="10" fill="#ffd166" stroke="#d97706" stroke-width="2"/>
+            <text x="400" y="125" font-size="9" text-anchor="middle" fill="#92400e" font-family="Fredoka One, cursive">£</text>
+            <circle cx="300" cy="125" r="11" fill="#ffd166" stroke="#d97706" stroke-width="2"/>
+            <text x="300" y="130" font-size="10" text-anchor="middle" fill="#92400e" font-family="Fredoka One, cursive">£</text>
+          </g>
+
+          <!-- NPV INDICATOR -->
+          <g id="npvIndicator" transform="translate(20,20)">
+            <rect x="0" y="0" width="120" height="40" rx="12" fill="rgba(255,255,255,0.9)"/>
+            <text x="10" y="16" font-family="Fredoka One, cursive" font-size="10" fill="#6c3ce2">NPV STATUS</text>
+            <text id="npvStatusText" x="10" y="33" font-family="Space Mono, monospace" font-size="12" fill="#16a34a">Calculating...</text>
+          </g>
+
+          <!-- PAYBACK INDICATOR -->
+          <g id="paybackIndicator" transform="translate(560,20)">
+            <rect x="0" y="0" width="120" height="40" rx="12" fill="rgba(255,255,255,0.9)"/>
+            <text x="10" y="16" font-family="Fredoka One, cursive" font-size="10" fill="#6c3ce2">PAYBACK</text>
+            <text id="paybackText" x="10" y="33" font-family="Space Mono, monospace" font-size="12" fill="#d97706">-- yrs</text>
+          </g>
+
+          <!-- DECISION BANNER -->
+          <g id="decisionBanner" opacity="0">
+            <rect x="200" y="8" width="300" height="36" rx="18" fill="#16a34a" id="bannerRect"/>
+            <text id="bannerText" x="350" y="32" font-family="Fredoka One, cursive" font-size="16" fill="white" text-anchor="middle">✅ ACCEPT PROJECT</text>
+          </g>
+
+          <!-- CHARACTER FACE -->
+          <g id="characterFace" transform="translate(630,200)">
+            <circle cx="0" cy="0" r="28" fill="#ffd166" stroke="#d97706" stroke-width="2"/>
+            <!-- Eyes -->
+            <circle cx="-9" cy="-6" r="4" fill="#1a0533"/>
+            <circle cx="9" cy="-6" r="4" fill="#1a0533"/>
+            <circle cx="-7" cy="-8" r="1.5" fill="white"/>
+            <circle cx="11" cy="-8" r="1.5" fill="white"/>
+            <!-- Mouth - happy by default -->
+            <path id="charMouth" d="M -12 6 Q 0 18 12 6" stroke="#1a0533" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <!-- Eyebrows -->
+            <path id="charBrowL" d="M -14 -12 Q -9 -16 -4 -12" stroke="#1a0533" stroke-width="2" fill="none"/>
+            <path id="charBrowR" d="M 4 -12 Q 9 -16 14 -12" stroke="#1a0533" stroke-width="2" fill="none"/>
+            <!-- Hat -->
+            <rect x="-20" y="-42" width="40" height="16" rx="4" fill="#3730a3"/>
+            <rect x="-26" y="-28" width="52" height="6" rx="3" fill="#4338ca"/>
+            <text x="0" y="-30" font-family="Fredoka One, cursive" font-size="8" fill="#ffd166" text-anchor="middle">£</text>
+          </g>
+
+          <!-- ROUND NUMBER BIG DISPLAY -->
+          <text id="roundDisplay" x="350" y="285" font-family="Fredoka One, cursive" font-size="11" fill="rgba(255,255,255,0.6)" text-anchor="middle">ROUND 1 — SMALL-SCALE INVESTMENT</text>
+        </svg>
+      </div>
+
+      <!-- METRICS BARS -->
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-title">📊 Live Metrics</div>
+        <div id="metricsPanel">
+          <!-- Generated by JS -->
+        </div>
+      </div>
+
+      <!-- CHART -->
+      <div class="card">
+        <div class="card-title">📈 Performance Tracker</div>
+        <canvas id="chartCanvas" height="140"></canvas>
+      </div>
+    </div>
+
+    <!-- RIGHT: ATL + HISTORY -->
+    <div>
+      <!-- ATL TRACKER -->
+      <div id="atlTracker" style="margin-bottom:14px;">
+        <div class="atl-title">🎯 ATL Skills Tracker</div>
+        <div class="atl-item"><div class="atl-dot" id="atl1"></div> Made a prediction</div>
+        <div class="atl-item"><div class="atl-dot" id="atl2"></div> Ranked Three Futures</div>
+        <div class="atl-item"><div class="atl-dot" id="atl3"></div> Justified reasoning</div>
+        <div class="atl-item"><div class="atl-dot" id="atl4"></div> Connected to real world</div>
+        <div class="atl-item"><div class="atl-dot" id="atl5"></div> Identified key variable</div>
+        <div class="atl-item"><div class="atl-dot" id="atl6"></div> Reflected on LP</div>
+        <div style="margin-top:10px;font-size:0.75rem;color:rgba(255,255,255,0.7);">
+          Score: <span id="atlScore" style="color:var(--accent3);font-weight:800;">0/6</span>
+        </div>
+      </div>
+
+      <!-- RESULTS HISTORY -->
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-title">📋 Results History</div>
+        <div id="historyPanel">
+          <div style="font-size:0.78rem;color:var(--text-muted);font-weight:600;">
+            No rounds completed yet.
+          </div>
+        </div>
+      </div>
+
+      <!-- KEY CONCEPTS BOX -->
+      <div class="card">
+        <div class="card-title">🔑 Key Concepts</div>
+        <div style="font-size:0.77rem;line-height:1.6;color:var(--text-muted);">
+          <div style="margin-bottom:6px;"><strong style="color:var(--primary);">Payback Period:</strong> Time to recover initial outlay from net cash flows.</div>
+          <div style="margin-bottom:6px;"><strong style="color:var(--primary);">NPV:</strong> Sum of discounted cash flows minus initial investment.</div>
+          <div style="margin-bottom:6px;"><strong style="color:var(--primary);">ARR:</strong> Average annual profit ÷ Initial outlay × 100%</div>
+          <div style="margin-bottom:6px;"><strong style="color:var(--primary);">Discount Rate:</strong> Reflects opportunity cost / risk. Higher = lower NPV.</div>
+          <div><strong style="color:var(--primary);">Decision Rule:</strong> Accept if NPV > 0, ARR > hurdle rate.</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /maingrid -->
+
+  <!-- REFLECTION PANEL -->
+  <div id="reflectionPanel">
+    <h3>🧠 IB Reflection — All Rounds Complete!</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="reflect-q">
+        <div class="q-num">Q1 — Decision-Making</div>
+        <p>What does "decision-making" mean in this simulation context? Give a real-world example from the HS2 railway or NHS.</p>
+      </div>
+      <div class="reflect-q">
+        <div class="q-num">Q2 — Unexpected Consequence</div>
+        <p>Which single decision had the most unexpected consequence — and why were you surprised by the result?</p>
+      </div>
+      <div class="reflect-q">
+        <div class="q-num">Q3 — Cultural Perspective</div>
+        <p>How would someone from a different cultural or economic background approach these investment decisions differently?</p>
+      </div>
+      <div class="reflect-q">
+        <div class="q-num">Q4 — Evidence-Based Reflection</div>
+        <p>What would you change if you ran the simulation again? Use specific evidence from your payback period, NPV, and ARR results.</p>
+      </div>
+      <div class="reflect-q">
+        <div class="q-num">Q5 — Global Connection</div>
+        <p>How does this simulation connect to a current global issue you know about outside school? (Climate investment? NHS funding? HS2?)</p>
+      </div>
+      <div class="reflect-q">
+        <div class="q-num">Q6 — Learner Profile</div>
+        <p>Which LP attribute did your decision-making best reflect: 🧠 Thinkers or 📚 Knowledgeable? Justify your choice with evidence.</p>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:18px;">
+      <button onclick="document.getElementById('reflectionPanel').style.display='none'" style="background:var(--accent);color:white;border:none;border-radius:14px;padding:12px 32px;font-family:'Fredoka One',cursive;font-size:1.05rem;cursor:pointer;">
+        🔄 Run Again
+      </button>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+// ─── STATE ───
+const state = {
+  round: 1,
+  maxRounds: 3,
+  sliders: [2, 2, 1, 2],
+  prediction: null,
+  history: [],
+  atlBits: [false,false,false,false,false,false],
+  eventFired: [false,false,false],
+  chartData: { payback:[], arr:[], npv:[] }
+};
+
+// ─── CONFIG ───
+const investmentMap = [100000, 500000, 1000000, 3000000, 10000000];
+const cashFlowMap   = [0.05, 0.10, 0.18, 0.28, 0.40]; // fraction of investment per year
+const discountMap   = [0.03, 0.05, 0.08, 0.12, 0.15];
+const lifeMap       = [3, 5, 8, 10, 15];
+const investLabels  = ['£100K','£500K','£1M','£3M','£10M'];
+const flowLabels    = ['Very Low','Low','Moderate','High','Very High'];
+const discLabels    = ['3%','5%','8%','12%','15%'];
+const lifeLabels    = ['3 yrs','5 yrs','8 yrs','10 yrs','15 yrs'];
+
+const guidingQs = [
+  "🤔 Round 1: You are advising a small business on a solar panel installation. Which variable do you think will have the biggest impact on the payback period?",
+  "🤔 Round 2: You are advising an NHS Trust on a new MRI machine. With more cash flow data available, how does risk change your discount rate choice?",
+  "🤔 Round 3: You are evaluating the HS2 railway project. With billions at stake, which single metric — Payback, ARR, or NPV — would you rely on most? Why?"
+];
+
+const realWorldEchos = [
+  { title: "☀️ Real-World Echo — Solar Panels", text: "UK households installing solar panels in 2024 faced payback periods of 8–12 years with no government subsidy. A 3% discount rate (close to mortgage rates) made the NPV positive. Many households rejected the investment despite positive long-run returns — confirming that payback period shapes real behaviour." },
+  { title: "🏥 Real-World Echo — NHS MRI Machines", text: "NHS Trusts use a 3.5% Treasury discount rate for capital investments. A new MRI machine costing £1.2M might generate £180K in annual efficiency savings. With a 10-year life, NPV at 3.5% is strongly positive — but budget constraints mean payback period often overrides NPV in NHS decisions." },
+  { title: "🚄 Real-World Echo — HS2 Railway", text: "HS2 Phase 1 had an original BCR (Benefit-Cost Ratio) of 2.3 — meaning £2.30 returned per £1 spent. However, revised cost estimates pushed the BCR below 1.5 as the discount rate applied to future benefits eroded NPV significantly. In 2023, Phase 2 was cancelled — a real-world NPV rejection decision." }
+];
+
+const events = [
+  { round: 1, title: "⚡ Unexpected Event: Interest Rate Rise!", text: "The Bank of England raises rates by 1.5%. Your discount rate effectively increases. NPV falls — but your short payback period provides protection!", effect: { disc: 1 } },
+  { round: 2, title: "🌱 Unexpected Event: Green Energy Grant!", text: "Government announces a £50K sustainability grant! Your initial investment outlay is effectively reduced, improving payback period and ARR.", effect: { inv: -1 } },
+  { round: 3, title: "📉 Unexpected Event: Supply Chain Shock!", text: "Global supply disruption cuts annual cash flows by 15% for Year 1. Projects with high discount rates are hit hardest — resilient early decisions pay off!", effect: { flow: -1 } }
+];
+
+// ─── CALCULATIONS ───
+function calcMetrics(s) {
+  const inv  = investmentMap[s[0]];
+  const flow = cashFlowMap[s[1]] * inv;
+  const disc = discountMap[s[2]];
+  const life = lifeMap[s[3]];
+
+  // Payback Period
+  let payback = inv / flow;
+  if (payback > life) payback = life + 0.5; // never recovered
+
+  // NPV
+  let npv = -inv;
+  for (let t = 1; t <= life; t++) {
+    npv += flow / Math.pow(1 + disc, t);
+  }
+
+  // ARR
+  const totalProfit = (flow * life) - inv;
+  const avgAnnualProfit = totalProfit / life;
+  const arr = (avgAnnualProfit / inv) * 100;
+
+  // Accept / reject
+  const accept = npv > 0;
+
+  // Sensitivity: how much NPV drops if discount increases by 2%
+  let npvSens = -inv;
+  for (let t = 1; t <= life; t++) {
+    npvSens += flow / Math.pow(1 + disc + 0.02, t);
+  }
+  const sensitivity = Math.abs((npvSens - npv) / Math.max(Math.abs(npv),1) * 100);
+
+  return { inv, flow, disc, life, payback, npv, arr, accept, sensitivity };
+}
+
+function toScore(val, min, max, invert=false) {
+  let s = Math.min(100, Math.max(0, ((val - min) / (max - min)) * 100));
+  return invert ? 100 - s : s;
+}
+
+function metricsToScores(m) {
+  const paybackScore = toScore(m.payback, 0, 15, true) * 0.8 + 10; // lower payback = higher score
+  const npvScore = m.npv >= 0 ? toScore(m.npv, 0, 5000000) * 0.7 + 30 : toScore(m.npv, -5000000, 0) * 0.3;
+  const arrScore = m.arr >= 0 ? Math.min(100, m.arr * 5) : 5;
+  const acceptScore = m.accept ? 75 : 25;
+  const sensScore = toScore(m.sensitivity, 0, 100, true);
+  return {
+    payback: Math.round(Math.min(100, Math.max(5, paybackScore))),
+    npv: Math.round(Math.min(100, Math.max(2, npvScore))),
+    arr: Math.round(Math.min(100, Math.max(2, arrScore))),
+    accept: acceptScore,
+    sensitivity: Math.round(Math.min(100, Math.max(5, sensScore)))
+  };
+}
+
+// ─── SPLASH ───
+function makeStar(c) {
+  const s = document.createElement('div');
+  s.className = 'star';
+  const sz = Math.random()*4+2;
+  s.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${(Math.random()*3+2).toFixed(1)}s;animation-delay:${(Math.random()*3).toFixed(1)}s`;
+  c.appendChild(s);
+}
+const sc = document.getElementById('starsContainer');
+for(let i=0;i<80;i++) makeStar(sc);
+
+document.getElementById('startBtn').addEventListener('click', () => {
+  document.getElementById('splash').style.opacity = '0';
+  setTimeout(() => {
+    document.getElementById('splash').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    document.getElementById('app').style.flexDirection = 'column';
+    initSim();
+  }, 600);
+});
+
+// ─── INIT ───
+function initSim() {
+  updateSliderLabels();
+  renderMetrics();
+  updateScene();
+  renderChart();
+  setGuidingQ();
+  toast('🚀 Simulation started! Set your variables and make a prediction.');
+}
+
+// ─── SLIDER UPDATES ───
+const sliders = [0,1,2,3].map(i => document.getElementById('s'+i));
+sliders.forEach((sl,i) => {
+  sl.addEventListener('input', () => {
+    state.sliders[i] = +sl.value;
+    updateSliderLabels();
+    renderMetrics();
+    updateScene();
+  });
+});
+
+function updateSliderLabels() {
+  document.getElementById('v0label').textContent = investLabels[state.sliders[0]];
+  document.getElementById('v1label').textContent = flowLabels[state.sliders[1]];
+  document.getElementById('v2label').textContent = discLabels[state.sliders[2]];
+  document.getElementById('v3label').textContent = lifeLabels[state.sliders[3]];
+}
+
+// ─── METRICS BARS ───
+const metricDefs = [
+  { key:'payback', label:'Payback Period Score', icon:'⏱️' },
+  { key:'npv',     label:'NPV Score', icon:'💰' },
+  { key:'arr',     label:'ARR Score', icon:'📈' },
+  { key:'accept',  label:'Accept/Reject Signal', icon:'✅' },
+  { key:'sensitivity', label:'Sensitivity (lower=safer)', icon:'📉' }
+];
+
+function renderMetrics() {
+  const m = calcMetrics(state.sliders);
+  const sc = metricsToScores(m);
+  const panel = document.getElementById('metricsPanel');
+  panel.innerHTML = metricDefs.map(d => {
+    const v = sc[d.key];
+    const col = v > 60 ? 'var(--bar-green)' : v > 30 ? 'var(--bar-amber)' : 'var(--bar-red)';
+    const warn = v < 20 ? ' warn-blink' : '';
+    const rawLabel = d.key === 'payback' ? `${m.payback > m.life ? '>'+m.life : m.payback.toFixed(1)} yrs`
+      : d.key === 'npv' ? `£${(m.npv/1000).toFixed(0)}K`
+      : d.key === 'arr' ? `${m.arr.toFixed(1)}%`
+      : d.key === 'accept' ? (m.accept ? '✅ ACCEPT' : '❌ REJECT')
+      : `${m.sensitivity.toFixed(0)}% drop`;
+    return `<div class="metric-bar-row">
+      <div class="metric-bar-label">
+        <span>${d.icon} ${d.label}</span>
+        <span style="font-family:'Space Mono',monospace;font-size:0.75rem;color:${col}">${rawLabel}</span>
+      </div>
+      <div class="metric-bar-track">
+        <div class="metric-bar-fill${warn}" style="width:${v}%;background:${col};"></div>
+      </div>
+    </div>`;
+  }).join('');
+  updateSceneIndicators(m, sc);
+}
+
+// ─── SVG SCENE ───
+function updateScene() {
+  const s = state.sliders;
+  const m = calcMetrics(s);
+  const sc = metricsToScores(m);
+
+  // Sky colour shifts with NPV
+  const npvOk = m.npv >= 0;
+  document.getElementById('skyTop').setAttribute('stop-color', npvOk ? '#87ceeb' : '#b0c4de');
+  document.getElementById('skyBot').setAttribute('stop-color', npvOk ? '#e0f4ff' : '#d0d8e8');
+
+  // Ground colour shifts with ARR
+  const groundCol = sc.arr > 60 ? '#4ade80' : sc.arr > 30 ? '#a3e635' : '#d4d4aa';
+  document.getElementById('groundTop').setAttribute('stop-color', groundCol);
+
+  // Building size scales with investment
+  const invScale = 0.6 + (s[0] / 4) * 0.8;
+  const bg = document.getElementById('buildingGroup');
+  bg.setAttribute('transform', `translate(${350 - 70*invScale}, ${230 - 85*invScale}) scale(${invScale})`);
+
+  // Building colour shifts with NPV
+  const bCol = npvOk ? '#4f46e5' : '#7f1d1d';
+  document.getElementById('factoryBody').setAttribute('fill', bCol);
+
+  // Trees: grow with ARR score
+  const treeAlpha = sc.arr > 60 ? 1 : sc.arr > 30 ? 0.7 : 0.4;
+  const treeScale = 0.5 + (sc.arr / 100) * 0.7;
+  document.getElementById('treesGroup').setAttribute('opacity', treeAlpha);
+  ['t1top','t2top','t3top','t4top'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) {
+      const cx = +el.getAttribute('cx');
+      const cy = +el.getAttribute('cy');
+      const baseR = id==='t1top'?28 : id==='t2top'?22 : id==='t3top'?24 : 20;
+      el.setAttribute('r', Math.round(baseR * treeScale));
+    }
+  });
+
+  // Coin particles: visible when accept
+  document.getElementById('coinGroup').setAttribute('opacity', m.accept ? 1 : 0);
+
+  // Sun size: grows with NPV score
+  const sunR = 25 + (sc.npv / 100) * 20;
+  document.getElementById('sceneSun').setAttribute('r', sunR);
+
+  // NPV status text
+  const npvTxt = document.getElementById('npvStatusText');
+  npvTxt.textContent = `£${(m.npv/1000).toFixed(0)}K`;
+  npvTxt.setAttribute('fill', m.npv >= 0 ? '#16a34a' : '#dc2626');
+
+  // Payback text
+  document.getElementById('paybackText').textContent =
+    m.payback > m.life ? `>  ${m.life}yr` : `${m.payback.toFixed(1)} yrs`;
+
+  // Decision banner
+  const banner = document.getElementById('decisionBanner');
+  const bannerRect = document.getElementById('bannerRect');
+  const bannerText = document.getElementById('bannerText');
+  banner.setAttribute('opacity', '1');
+  if (m.accept) {
+    bannerRect.setAttribute('fill', '#16a34a');
+    bannerText.textContent = '✅ ACCEPT PROJECT';
+  } else {
+    bannerRect.setAttribute('fill', '#dc2626');
+    bannerText.textContent = '❌ REJECT PROJECT';
+  }
+
+  // Character expression
+  const mood = (sc.npv + sc.arr) / 2;
+  const mouth = document.getElementById('charMouth');
+  const browL = document.getElementById('charBrowL');
+  const browR = document.getElementById('charBrowR');
+  if (mood > 60) {
+    mouth.setAttribute('d', 'M -12 6 Q 0 18 12 6');
+    browL.setAttribute('d', 'M -14 -12 Q -9 -16 -4 -12');
+    browR.setAttribute('d', 'M 4 -12 Q 9 -16 14 -12');
+  } else if (mood > 35) {
+    mouth.setAttribute('d', 'M -10 8 Q 0 12 10 8');
+    browL.setAttribute('d', 'M -14 -13 Q -9 -15 -4 -13');
+    browR.setAttribute('d', 'M 4 -13 Q 9 -15 14 -13');
+  } else {
+    mouth.setAttribute('d', 'M -12 14 Q 0 6 12 14');
+    browL.setAttribute('d', 'M -14 -16 Q -9 -12 -4 -16');
+    browR.setAttribute('d', 'M 4 -16 Q 9 -12 14 -16');
+  }
+
+  // Round display
+  const rLabels = ['SMALL-SCALE INVESTMENT','MID-SCALE INVESTMENT','MAJOR CAPITAL DECISION'];
+  document.getElementById('roundDisplay').textContent = `ROUND ${state.round} — ${rLabels[state.round-1] || 'COMPLETE'}`;
+}
+
+function updateSceneIndicators(m, sc) {
+  // handled in updateScene
+}
+
+// ─── CHART ───
+let chartCtx;
+function renderChart() {
+  const canvas = document.getElementById('chartCanvas');
+  if (!chartCtx) chartCtx = canvas.getContext('2d');
+  const W = canvas.offsetWidth || 400;
+  const H = 140;
+  canvas.width = W * window.devicePixelRatio;
+  canvas.height = H * window.devicePixelRatio;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  const ctx = chartCtx;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  ctx.clearRect(0,0,W,H);
+
+  // Background
+  ctx.fillStyle = '#f5f3ff';
+  ctx.roundRect(0,0,W,H,12);
+  ctx.fill();
+
+  // Grid
+  ctx.strokeStyle = '#e0d8ff'; ctx.lineWidth = 1;
+  [25,50,75].forEach(pct => {
+    const y = H - (pct/100)*H*0.85 - 10;
+    ctx.beginPath(); ctx.moveTo(30,y); ctx.lineTo(W-10,y); ctx.stroke();
+    ctx.fillStyle='#c4b5fd'; ctx.font='9px Space Mono'; ctx.fillText(pct+'%',2,y+3);
+  });
+
+  const data = state.chartData;
+  const allData = [...data.payback, ...data.arr, ...data.npv];
+  if (allData.length === 0) {
+    ctx.fillStyle='#9ca3af'; ctx.font='12px Nunito'; ctx.textAlign='center';
+    ctx.fillText('Complete rounds to see tracking data', W/2, H/2);
+    return;
+  }
+
+  const series = [
+    { data: data.payback, color:'#6c3ce2', label:'Payback' },
+    { data: data.arr, color:'#16a34a', label:'ARR' },
+    { data: data.npv, color:'#ff6b35', label:'NPV' }
+  ];
+
+  series.forEach(s => {
+    if(s.data.length < 1) return;
+    ctx.beginPath();
+    ctx.strokeStyle = s.color; ctx.lineWidth = 3;
+    s.data.forEach((v,i) => {
+      const x = 30 + (i / Math.max(2, state.maxRounds-1)) * (W-40);
+      const y = H - (v/100)*(H*0.85) - 10;
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+    // Dots
+    s.data.forEach((v,i) => {
+      const x = 30 + (i / Math.max(2, state.maxRounds-1)) * (W-40);
+      const y = H - (v/100)*(H*0.85) - 10;
+      ctx.beginPath(); ctx.arc(x,y,5,0,Math.PI*2);
+      ctx.fillStyle=s.color; ctx.fill();
+    });
+  });
+
+  // Legend
+  let lx = 30;
+  series.forEach(s => {
+    ctx.fillStyle=s.color; ctx.fillRect(lx,5,12,8);
+    ctx.fillStyle='#374151'; ctx.font='9px Nunito'; ctx.textAlign='left';
+    ctx.fillText(s.label, lx+16, 13);
+    lx += ctx.measureText(s.label).width + 28;
+  });
+}
+
+// ─── PREDICTION ───
+function selectPred(btn) {
+  document.querySelectorAll('.pred-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  state.prediction = btn.dataset.pred;
+  document.getElementById('advanceBtn').disabled = false;
+  markATL(0);
+  toast('🔮 Prediction locked: ' + btn.textContent.split('\n')[0]);
+}
+
+// ─── GUIDING Q ───
+function setGuidingQ() {
+  document.getElementById('guidingQ').textContent = guidingQs[Math.min(state.round-1, guidingQs.length-1)];
+}
+
+// ─── ADVANCE ───
+function handleAdvance() {
+  const m = calcMetrics(state.sliders);
+  const sc = metricsToScores(m);
+
+  // Check event
+  const ev = events.find(e => e.round === state.round && !state.eventFired[state.round-1]);
+  if(ev) state.eventFired[state.round-1] = true;
+
+  // Store chart data
+  state.chartData.payback.push(sc.payback);
+  state.chartData.arr.push(sc.arr);
+  state.chartData.npv.push(sc.npv);
+
+  // Store history
+  state.history.push({ round: state.round, m, sc, pred: state.prediction });
+
+  // Build and show modal
+  showRoundModal(m, sc, ev);
+}
+
+// ─── THREE FUTURES ───
+function getThreeFutures(m, sc) {
+  const npvK = (m.npv/1000).toFixed(0);
+  const payback = m.payback > m.life ? `more than ${m.life}` : m.payback.toFixed(1);
+  const accept = m.accept;
+
+  return {
+    A: `The project generates positive NPV of £${Math.abs(npvK)}K+ with a payback of under ${Math.ceil(m.life*0.5)} years. ARR exceeds 15%, the board approves, and the business expands confidently.`,
+    B: `The project ${accept ? 'is accepted' : 'is rejected'} with NPV of £${npvK}K and a payback of ${payback} years. ARR is ${m.arr.toFixed(1)}%, ${m.arr > 10 ? 'meeting' : 'missing'} the hurdle rate. The decision ${accept ? 'proceeds cautiously' : 'is deferred pending review'}.`,
+    C: `Rising discount rates collapse the NPV to deeply negative. Payback exceeds the project life — investment is never recovered. The board rejects the project and the company misses the market opportunity.`
+  };
+}
+
+// ─── DETERMINE ACTUAL FUTURE ───
+function actualFuture(sc) {
+  const avg = (sc.npv + sc.arr + sc.payback) / 3;
+  if (avg > 62) return 'A';
+  if (avg > 35) return 'B';
+  return 'C';
+}
+
+// ─── CAUSE CHAIN ───
+function getCauseChain(m, sc) {
+  if (m.accept) {
+    return ['Annual CFs > Discount cost','NPV turns positive','ARR meets hurdle','Board ACCEPTS'];
+  } else if (m.payback > m.life) {
+    return ['Payback > Project life','Investment never recovered','NPV deeply negative','Board REJECTS'];
+  } else {
+    return ['High discount rate','Future CFs heavily discounted','NPV negative','Board REJECTS'];
+  }
+}
+
+// ─── SHOW MODAL ───
+let futureRanking = null;
+let currentActualFuture = null;
+
+function showRoundModal(m, sc, ev) {
+  document.getElementById('modalTitle').textContent = `Round ${state.round} Results`;
+  document.getElementById('modalRoundLabel').textContent = ['Small-Scale Investment','Mid-Scale Investment','Major Capital Decision'][state.round-1];
+
+  const futures = getThreeFutures(m, sc);
+  const actual = actualFuture(sc);
+  currentActualFuture = actual;
+  const chain = getCauseChain(m, sc);
+  const rw = realWorldEchos[state.round-1];
+
+  const predMatch = checkPrediction(m, sc, state.prediction);
+  const predEmoji = predMatch ? '🎯 Correct!' : '❌ Missed';
+
+  const html = `
+    <!-- Prediction result -->
+    <div style="background:${predMatch?'#f0fdf4':'#fef2f2'};border-radius:14px;padding:12px;margin-bottom:14px;border:2px solid ${predMatch?'#86efac':'#fca5a5'};">
+      <div style="font-family:'Fredoka One',cursive;font-size:1.05rem;color:${predMatch?'#166534':'#991b1b'}">${predEmoji} Your prediction was: ${state.prediction.toUpperCase()}</div>
+      <div style="font-size:0.8rem;font-weight:600;color:${predMatch?'#166534':'#991b1b'};margin-top:4px;">${predMatch ? 'Your analysis was accurate! Great economic thinking.' : 'The outcome surprised you — this is where real learning happens!'}</div>
+    </div>
+
+    ${ev ? `<div class="event-card"><div class="ev-title">${ev.title}</div><p>${ev.text}</p></div>` : ''}
+
+    <!-- Outcome grid -->
+    <div class="outcome-grid" style="margin-bottom:14px;">
+      <div class="outcome-cell">
+        <div class="oc-label">Payback Period</div>
+        <div class="oc-val">${m.payback > m.life ? '>'+m.life+'yr' : m.payback.toFixed(1)+' yrs'}</div>
+        <div class="oc-arrow ${sc.payback > 50 ? 'arrow-up':'arrow-down'}">${sc.payback > 50 ? '▲ Good':'▼ Long'}</div>
+      </div>
+      <div class="outcome-cell">
+        <div class="oc-label">NPV</div>
+        <div class="oc-val">£${(m.npv/1000).toFixed(0)}K</div>
+        <div class="oc-arrow ${m.npv>=0?'arrow-up':'arrow-down'}">${m.npv>=0?'▲ Positive':'▼ Negative'}</div>
+      </div>
+      <div class="outcome-cell">
+        <div class="oc-label">ARR</div>
+        <div class="oc-val">${m.arr.toFixed(1)}%</div>
+        <div class="oc-arrow ${m.arr>10?'arrow-up':'arrow-down'}">${m.arr>10?'▲ Above hurdle':'▼ Below hurdle'}</div>
+      </div>
+      <div class="outcome-cell">
+        <div class="oc-label">Decision</div>
+        <div class="oc-val" style="font-size:0.85rem;color:${m.accept?'#16a34a':'#dc2626'}">${m.accept?'✅ ACCEPT':'❌ REJECT'}</div>
+        <div class="oc-arrow" style="font-size:0.8rem;color:var(--text-muted)">NPV rule</div>
+      </div>
+      <div class="outcome-cell">
+        <div class="oc-label">Sensitivity</div>
+        <div class="oc-val">${m.sensitivity.toFixed(0)}% drop</div>
+        <div class="oc-arrow ${sc.sensitivity>50?'arrow-up':'arrow-down'}">${sc.sensitivity>50?'▲ Resilient':'▼ Sensitive'}</div>
+      </div>
+      <div class="outcome-cell">
+        <div class="oc-label">Investment</div>
+        <div class="oc-val">£${(m.inv/1000).toFixed(0)}K</div>
+        <div class="oc-arrow" style="font-size:0.8rem;color:var(--text-muted)">Initial outlay</div>
+      </div>
+    </div>
+
+    <!-- Cause chain -->
+    <div style="font-family:'Fredoka One',cursive;color:var(--primary);font-size:0.9rem;margin-bottom:8px;">⛓️ Cause → Effect Chain</div>
+    <div class="cause-chain">
+      ${chain.map((n,i) => `<span class="cause-node">${n}</span>${i<chain.length-1?'<span class="cause-arrow">→</span>':''}`).join('')}
+    </div>
+
+    <!-- THREE FUTURES -->
+    <div class="futures-section">
+      <h4>🌳 Three Futures — Which Was Most Likely?</h4>
+      <div class="futures-grid">
+        <div class="future-card future-A"><div class="future-label">🌱 Future A — Optimistic</div>${futures.A}</div>
+        <div class="future-card future-B"><div class="future-label">⚖️ Future B — Realistic</div>${futures.B}</div>
+        <div class="future-card future-C"><div class="future-label">🔴 Future C — Pessimistic</div>${futures.C}</div>
+      </div>
+    </div>
+
+    <!-- Rank -->
+    <div class="rank-section" id="rankSection">
+      <label>Rank your most likely future (tap to select your #1):</label>
+      <div class="rank-options">
+        <button class="rank-btn" onclick="rankFuture('A',this)">🌱 A Most Likely</button>
+        <button class="rank-btn" onclick="rankFuture('B',this)">⚖️ B Most Likely</button>
+        <button class="rank-btn" onclick="rankFuture('C',this)">🔴 C Most Likely</button>
+      </div>
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <label style="font-size:0.78rem;font-weight:700;color:var(--text-muted);display:block;margin-bottom:5px;">✏️ In ONE sentence, justify your ranking:</label>
+      <textarea class="justify-input" id="justifyInput" placeholder="e.g. I ranked A most likely because high cash flows outweigh the discount rate effect..."></textarea>
+    </div>
+
+    <!-- Reveal button -->
+    <div style="margin-bottom:14px;">
+      <button class="reveal-btn" onclick="revealActual('${actual}')">🎲 Reveal Actual Outcome</button>
+    </div>
+
+    <div id="revealSection" style="display:none;">
+      <!-- Real world echo -->
+      <div class="rw-echo">
+        <div class="rw-title">${rw.title}</div>
+        <p>${rw.text}</p>
+      </div>
+
+      <!-- Discussion prompt -->
+      <div style="background:#fffbeb;border-radius:14px;padding:12px;margin-bottom:12px;border:2px solid #fcd34d;">
+        <div style="font-family:'Fredoka One',cursive;color:#92400e;font-size:0.9rem;margin-bottom:5px;">💬 Discussion Prompt</div>
+        <div style="font-size:0.82rem;font-weight:600;color:#78350f;">
+          What decision would have made Future A happen instead? Adjust which variable would have the biggest impact on NPV?
+        </div>
+      </div>
+
+      <!-- LP chips -->
+      <div style="font-family:'Fredoka One',cursive;color:var(--primary);font-size:0.85rem;margin-bottom:8px;">🎓 Which IB Learner Profile attribute best describes YOUR decision-making this round?</div>
+      <div class="lp-chips" id="lpChips">
+        <button class="lp-chip" onclick="selectLP(this,'Thinker')">🧠 Thinker</button>
+        <button class="lp-chip" onclick="selectLP(this,'Knowledgeable')">📚 Knowledgeable</button>
+      </div>
+    </div>
+
+    <div style="text-align:right;margin-top:14px;">
+      <button class="close-modal-btn" onclick="closeModal()">
+        ${state.round < state.maxRounds ? '➡️ Continue to Round '+(state.round+1) : '🏁 View Reflections'}
+      </button>
+    </div>
+  `;
+
+  document.getElementById('modalBody').innerHTML = html;
+  document.getElementById('modalOverlay').classList.add('show');
+  markATL(1); // prediction was ranked (Three Futures)
+}
+
+function rankFuture(letter, btn) {
+  document.querySelectorAll('.rank-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  futureRanking = letter;
+  markATL(1);
+}
+
+function revealActual(actual) {
+  const ji = document.getElementById('justifyInput').value.trim();
+  if(ji.length > 3) markATL(2);
+
+  document.getElementById('revealSection').style.display = 'block';
+  markATL(3);
+
+  // Show which future was actual
+  const notActual = ['A','B','C'].filter(f=>f!==actual);
+  const whyNot = notActual[0] === 'A'
+    ? 'Future A didn\'t happen because cash flows or discount effects weren\'t favourable enough for a strongly positive NPV.'
+    : 'Future C didn\'t happen because the investment still generated some positive discounted cash flows.';
+
+  const matchedRanked = futureRanking === actual;
+  const rankResult = document.createElement('div');
+  rankResult.style.cssText = 'background:linear-gradient(135deg,#1a0533,#3d1080);border-radius:14px;padding:14px;margin-bottom:12px;color:#fff;';
+  rankResult.innerHTML = `
+    <div style="font-family:'Fredoka One',cursive;font-size:1rem;color:#ffd166;margin-bottom:6px;">
+      🎲 Actual outcome: Future ${actual} ${matchedRanked?'— You predicted correctly! 🎯':'— Surprising result!'}
+    </div>
+    <div style="font-size:0.8rem;line-height:1.5;color:rgba(255,255,255,0.9);">
+      ${whyNot}
+    </div>
+  `;
+  document.getElementById('rankSection').after(rankResult);
+  toast(`🎲 Actual outcome was Future ${actual}!`);
+}
+
+function selectLP(btn, attr) {
+  document.querySelectorAll('.lp-chip').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  markATL(5);
+  toast(`🎓 LP: ${attr} — great reflection!`);
+}
+
+// ─── CLOSE MODAL ───
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+
+  // Advance round
+  markATL(4); // connected to real world (they saw the echo)
+  updateHistory();
+  renderChart();
+
+  if (state.round >= state.maxRounds) {
+    showReflections();
+  } else {
+    state.round++;
+    state.prediction = null;
+    document.querySelectorAll('.pred-btn').forEach(b=>b.classList.remove('selected'));
+    document.getElementById('advanceBtn').disabled = true;
+    document.getElementById('topRound').textContent = `Round ${state.round} of ${state.maxRounds}`;
+    updateTimeline();
+    setGuidingQ();
+    updateScene();
+    toast(`🚀 Round ${state.round} started! Adjust your variables.`);
+  }
+}
+
+// ─── TIMELINE ───
+function updateTimeline() {
+  for(let i=1;i<=3;i++){
+    const pc = document.getElementById('pc'+i);
+    const pl = document.getElementById('pl'+i);
+    pc.className = 'phase-circle';
+    pl.className = 'phase-label';
+    if(i < state.round){ pc.classList.add('done'); pc.textContent='✓'; }
+    else if(i === state.round){ pc.classList.add('active'); pl.classList.add('active'); }
+  }
+  for(let i=1;i<=2;i++){
+    const conn = document.getElementById('conn'+i);
+    conn.className = 'phase-connector';
+    if(i < state.round) conn.classList.add('done');
+  }
+}
+
+// ─── HISTORY ───
+function updateHistory() {
+  const hp = document.getElementById('historyPanel');
+  hp.innerHTML = state.history.map(h => {
+    const col = h.m.accept ? '#16a34a' : '#dc2626';
+    return `<div class="history-row">
+      <div class="h-round">${h.round}</div>
+      <div style="flex:1;">
+        <div style="font-weight:700;color:${col}">${h.m.accept?'✅ ACCEPT':'❌ REJECT'}</div>
+        <div style="color:var(--text-muted)">NPV: £${(h.m.npv/1000).toFixed(0)}K | ARR: ${h.m.arr.toFixed(1)}% | PB: ${h.m.payback.toFixed(1)}yr</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── PREDICTION CHECK ───
+function checkPrediction(m, sc, pred) {
+  const avg = (sc.npv + sc.arr + sc.payback) / 3;
+  if(pred === 'thriving' && avg > 62 && m.accept) return true;
+  if(pred === 'stable' && avg > 40 && avg <= 65) return true;
+  if(pred === 'stressed' && avg > 20 && avg <= 45) return true;
+  if(pred === 'crisis' && avg <= 30 && !m.accept) return true;
+  return false;
+}
+
+// ─── REFLECTIONS ───
+function showReflections() {
+  document.getElementById('reflectionPanel').style.display = 'block';
+  document.getElementById('reflectionPanel').scrollIntoView({behavior:'smooth'});
+  toast('🏁 Simulation complete! Time to reflect. 🧠');
+}
+
+// ─── ATL ───
+function markATL(idx) {
+  if(!state.atlBits[idx]) {
+    state.atlBits[idx] = true;
+    document.getElementById('atl'+(idx+1)).classList.add('active');
+    const count = state.atlBits.filter(Boolean).length;
+    document.getElementById('atlScore').textContent = count + '/6';
+  }
+}
+
+// ─── TOAST ───
+function toast(msg) {
+  const tc = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  tc.appendChild(t);
+  setTimeout(() => t.remove(), 4200);
+}
+
+// ─── RESET ───
+document.getElementById('resetBtn').addEventListener('click', () => {
+  state.round = 1;
+  state.sliders = [2,2,1,2];
+  state.prediction = null;
+  state.history = [];
+  state.atlBits = [false,false,false,false,false,false];
+  state.eventFired = [false,false,false];
+  state.chartData = { payback:[], arr:[], npv:[] };
+
+  sliders.forEach((sl,i) => sl.value = state.sliders[i]);
+  document.querySelectorAll('.pred-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('advanceBtn').disabled = true;
+  document.getElementById('topRound').textContent = 'Round 1 of 3';
+  document.querySelectorAll('.atl-dot').forEach(d=>d.classList.remove('active'));
+  document.getElementById('atlScore').textContent = '0/6';
+  document.getElementById('historyPanel').innerHTML = '<div style="font-size:0.78rem;color:var(--text-muted);font-weight:600;">No rounds completed yet.</div>';
+  document.getElementById('reflectionPanel').style.display = 'none';
+  document.getElementById('modalOverlay').classList.remove('show');
+
+  updateTimeline();
+  updateSliderLabels();
+  renderMetrics();
+  updateScene();
+  renderChart();
+  setGuidingQ();
+  toast('🔄 Simulation reset! Starting from Round 1.');
+});
+
+// ─── RESIZE CHART ───
+window.addEventListener('resize', renderChart);
+</script>
+</body>
+</html>
